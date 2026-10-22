@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: 'client/package-lock.json'
 
@@ -28,9 +28,6 @@ jobs:
       - name: Build Web Application & Sync iOS
         working-directory: ./client
         run: npm run build:ios
-
-      - name: Select Xcode Version
-        run: sudo xcode-select -switch /Applications/Xcode_15.4.app || true
 
       - name: Build Xcode Project
         working-directory: ./client/ios/App
