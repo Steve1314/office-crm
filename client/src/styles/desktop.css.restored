@@ -1,0 +1,860 @@
+/* =========================================================
+   DESKTOP & TABLET ADAPTIVE RESPONSIVE STYLING (SEPARATE UI)
+   ========================================================= */
+
+/* Base Layout Container (Applies to all) */
+.main-app-layout {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #07152b;
+}
+
+.main-app-content-wrapper {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Sidebar is hidden by default on mobile & smaller tablets */
+.desktop-sidebar {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------
+   1. TABLET VIEWPORT (601px - 1024px: iPads, Android Tablets)
+   --------------------------------------------------------- */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .app-viewport {
+    padding: 0 !important;
+    background: #07152b !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
+    align-items: stretch !important;
+  }
+
+  .device-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #07152b !important;
+  }
+
+  /* Headers in Tablet */
+  .dashboard-top-header,
+  .tasks-top-header,
+  .expenses-top-header,
+  .auth-top-header {
+    max-width: 860px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 24px clamp(24px, 3.5vw, 40px) 16px clamp(24px, 3.5vw, 40px) !important;
+  }
+
+  /* Curved White Body in Tablet */
+  .dashboard-body {
+    max-width: 860px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 24px clamp(24px, 3.5vw, 40px) 32px clamp(24px, 3.5vw, 40px) !important;
+    border-top-left-radius: 32px !important;
+    border-top-right-radius: 32px !important;
+    flex: 1 !important;
+  }
+
+  /* Metric Cards in Tablet (Spacious 2-column) */
+  .metric-cards-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+
+  .metric-card {
+    padding: 20px !important;
+    min-height: 135px !important;
+  }
+
+  .metric-card-value {
+    font-size: 30px !important;
+  }
+
+  /* Top 3 KPI Cards for Expenses */
+  .summary-tri-cards-row {
+    gap: 14px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .summary-tri-card {
+    padding: 16px 14px !important;
+    border-radius: 20px !important;
+  }
+
+  .summary-tri-amount {
+    font-size: 22px !important;
+  }
+
+  /* Task Items in Tablet */
+  .task-item-card {
+    padding: 16px !important;
+  }
+
+  /* Forms on Tablet: Centered neat card */
+  .create-task-screen,
+  .complete-task-screen,
+  .issue-money-screen {
+    max-width: 680px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+  }
+
+  /* Bottom Nav in Tablet */
+  .bottom-nav-bar {
+    max-width: 860px !important;
+    margin: auto auto 0 auto !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-top: 1px solid #e2e8f0 !important;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.05) !important;
+  }
+}
+
+/* ---------------------------------------------------------
+   2. DESKTOP VIEWPORT (>= 1025px: Laptops, Macs & Monitors)
+   --------------------------------------------------------- */
+@media (min-width: 1025px) {
+  .app-viewport {
+    padding: 0 !important;
+    background: #07152b !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  /* When on login screen, center the card on screen */
+  .app-viewport.login-viewport {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: radial-gradient(circle at 50% 25%, #0e2247 0%, #061122 100%) !important;
+  }
+
+  .device-container:not(.login-active) {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #07152b !important;
+  }
+
+  .device-container.login-active {
+    max-width: 440px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: unset !important;
+    max-height: 94vh !important;
+    margin: auto !important;
+    border-radius: 28px !important;
+    background: #ffffff !important;
+    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+    overflow-y: auto !important;
+  }
+
+  /* Main Layout row with Sidebar + Main Content */
+  .main-app-layout {
+    flex-direction: row !important;
+    width: 100% !important;
+    height: 100vh !important;
+    align-items: stretch !important;
+  }
+
+  /* Override dark navy .screen-content background on desktop */
+  .screen-content {
+    background-color: #f8fafc !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* =========================================
+     DESKTOP SIDEBAR STYLING
+     ========================================= */
+  .desktop-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 260px !important;
+    min-width: 260px !important;
+    height: 100vh !important;
+    background: #08152b !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.09) !important;
+    padding: 24px 16px !important;
+    flex-shrink: 0 !important;
+    z-index: 100 !important;
+    user-select: none !important;
+    gap: 16px !important;
+  }
+
+  /* 1. Brand Header */
+  .desktop-sidebar-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 4px 8px 12px 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  }
+
+  .desktop-brand-logo-wrap {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+    flex-shrink: 0 !important;
+    overflow: hidden !important;
+    padding: 3px !important;
+  }
+
+  .desktop-brand-logo-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    border-radius: 8px !important;
+  }
+
+  .desktop-brand-text {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .desktop-brand-title {
+    font-family: var(--font-heading) !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.3px !important;
+    line-height: 1.1 !important;
+  }
+
+  .desktop-brand-sub {
+    font-size: 11.5px !important;
+    color: #94a3b8 !important;
+    font-weight: 500 !important;
+  }
+
+  /* 2. User Profile Summary Pill */
+  .desktop-sidebar-user-card {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .desktop-user-avatar-wrap {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 50% !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+  }
+
+  .desktop-user-avatar-img {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+  }
+
+  .desktop-user-avatar-fallback {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50% !important;
+    background: #1e293b !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+  }
+
+  .desktop-user-online-dot {
+    position: absolute !important;
+    bottom: -1px !important;
+    right: -1px !important;
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 50% !important;
+    background: #10b981 !important;
+    border: 2px solid #08152b !important;
+  }
+
+  .desktop-user-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    overflow: hidden !important;
+  }
+
+  .desktop-user-name {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .desktop-user-badge {
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    padding: 1px 8px !important;
+    border-radius: 8px !important;
+    align-self: flex-start !important;
+  }
+
+  .desktop-user-badge.admin {
+    background: rgba(30, 105, 255, 0.25) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(96, 165, 250, 0.3) !important;
+  }
+
+  .desktop-user-badge.employee {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(52, 211, 153, 0.3) !important;
+  }
+
+  /* 3. Quick Action Buttons */
+  .desktop-sidebar-quick-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .desktop-quick-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 9px 14px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .desktop-quick-btn.task-btn {
+    background: #1e69ff !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(30, 105, 255, 0.25) !important;
+  }
+
+  .desktop-quick-btn.task-btn:hover {
+    background: #0052e0 !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .desktop-quick-btn.expense-btn {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  }
+
+  .desktop-quick-btn.expense-btn:hover {
+    background: rgba(16, 185, 129, 0.25) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  /* 4. Navigation Menu */
+  .desktop-sidebar-nav {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+  }
+
+  .desktop-nav-group-label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    letter-spacing: 0.8px !important;
+    padding: 8px 10px 4px 10px !important;
+  }
+
+  .desktop-nav-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+    text-align: left !important;
+    width: 100% !important;
+  }
+
+  .desktop-nav-item:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+  }
+
+  .desktop-nav-item.active {
+    background: #1e69ff !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 14px rgba(30, 105, 255, 0.3) !important;
+  }
+
+  .desktop-nav-badge {
+    margin-left: auto !important;
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 1px 7px !important;
+    border-radius: 10px !important;
+  }
+
+  /* 5. Footer with Logout */
+  .desktop-sidebar-footer {
+    padding-top: 12px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+  }
+
+  .desktop-sidebar-logout-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .desktop-sidebar-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ffffff !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+  }
+
+  /* =========================================
+     HIDE MOBILE BOTTOM NAV ON DESKTOP
+     ========================================= */
+  /* =========================================
+     DESKTOP UI CONTROLS & CLEANUP
+     ========================================= */
+  /* Hide mobile hamburger drawer trigger permanently on desktop */
+  .hamburger-btn {
+    display: none !important;
+  }
+
+  /* Hide mobile floating action button on desktop */
+  .home-quick-fab-container {
+    display: none !important;
+  }
+
+  /* Hide touch swipe back bubble on desktop */
+  .edge-swipe-back-bubble {
+    display: none !important;
+  }
+
+  /* Hide mobile bottom navigation bar on desktop */
+  .bottom-nav-bar {
+    display: none !important;
+  }
+
+  /* Content area next to sidebar */
+  .main-app-content-wrapper {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    background-color: #f8fafc !important;
+  }
+
+  /* Top Navigation Headers on Desktop - Seamless 100% Full Width */
+  .dashboard-top-header,
+  .tasks-top-header,
+  .expenses-top-header,
+  .admin-top-header,
+  .profile-top-header {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 20px clamp(28px, 3vw, 64px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background-color: #07152b !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Main Body on Desktop */
+  .dashboard-body {
+    width: 100% !important;
+    padding: 32px clamp(28px, 3vw, 64px) 48px clamp(28px, 3vw, 64px) !important;
+    border-radius: 0 !important;
+    flex: 1 1 auto !important;
+    background-color: #f8fafc !important;
+    box-shadow: none !important;
+  }
+
+  /* Grid for Metric Cards on Desktop (4 Columns Executive KPI Row) */
+  .metric-cards-grid,
+  .admin-metrics-2x2-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .admin-metric-card,
+  .metric-card {
+    padding: 22px 24px !important;
+    border-radius: 22px !important;
+    min-height: 140px !important;
+  }
+
+  .admin-metric-card:hover,
+  .metric-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .admin-metric-title,
+  .metric-card-title {
+    font-size: 14.5px !important;
+  }
+
+  .admin-metric-value,
+  .metric-card-value {
+    font-size: 32px !important;
+    font-weight: 800 !important;
+  }
+
+  /* Quick Actions Row on Desktop */
+  .home-quick-actions-row {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+    margin-bottom: 28px !important;
+  }
+
+  .home-quick-action-card {
+    padding: 16px 20px !important;
+    border-radius: 20px !important;
+  }
+
+  /* Top 3 KPI Cards for Expenses */
+  .summary-tri-cards-row {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 20px !important;
+    margin-bottom: 28px !important;
+  }
+
+  .summary-tri-card {
+    padding: 22px 24px !important;
+    border-radius: 22px !important;
+    gap: 12px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+  }
+
+  .summary-tri-label {
+    font-size: 14.5px !important;
+  }
+
+  .summary-tri-amount {
+    font-size: 26px !important;
+  }
+
+  /* Expense Items Grid on Desktop (2-Column Cards) */
+  .expense-history-card-box {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+    gap: 16px !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  .expense-item-row {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 18px !important;
+    padding: 16px 18px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  }
+
+  .expense-item-row:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07) !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Tasks Grid on Desktop (2-Column Cards) */
+  .tasks-list-container {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  .task-item-card {
+    border-radius: 20px !important;
+    padding: 20px !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  }
+
+  .task-item-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* =========================================
+     DESKTOP SUB-SCREENS & FORMS CENTERING
+     ========================================= */
+  .create-task-view,
+  .complete-task-view,
+  .issue-money-view,
+  .add-expense-view,
+  .expense-details-view,
+  .expense-summary-view,
+  .add-employee-view,
+  .employee-report-view,
+  .issued-money-details-view {
+    background-color: #f8fafc !important;
+    min-height: 100% !important;
+    width: 100% !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Sub-screen headers always stay 100% full width */
+  .create-task-view .tasks-top-header,
+  .complete-task-view .tasks-top-header,
+  .issue-money-view .expenses-top-header,
+  .add-expense-view .expenses-top-header,
+  .expense-details-view .expenses-top-header,
+  .expense-summary-view .expenses-top-header,
+  .add-employee-view .expenses-top-header,
+  .employee-report-view .expenses-top-header,
+  .issued-money-details-view .expenses-top-header {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 20px clamp(28px, 3vw, 64px) !important;
+    background-color: #07152b !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+  }
+
+  .create-task-view .dashboard-body,
+  .complete-task-view .dashboard-body,
+  .issue-money-view .dashboard-body,
+  .add-expense-view .dashboard-body,
+  .expense-details-view .dashboard-body,
+  .expense-summary-view .dashboard-body,
+  .add-employee-view .dashboard-body,
+  .employee-report-view .dashboard-body {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 36px clamp(28px, 3vw, 64px) 60px clamp(28px, 3vw, 64px) !important;
+    background-color: #f8fafc !important;
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+  }
+
+  .create-task-view .dashboard-body > *,
+  .complete-task-view .dashboard-body > *,
+  .issue-money-view .dashboard-body > *,
+  .add-expense-view .dashboard-body > *,
+  .expense-details-view .dashboard-body > *,
+  .expense-summary-view .dashboard-body > *,
+  .add-employee-view .dashboard-body > *,
+  .employee-report-view .dashboard-body > * {
+    max-width: 800px !important;
+    width: 100% !important;
+  }
+
+  /* Issued Money Details Voucher View on Desktop */
+  .issued-money-body-wrapper {
+    background-color: #f8fafc !important;
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+  }
+
+  .issued-money-details-body {
+    max-width: 900px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 32px clamp(28px, 3vw, 64px) 60px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  /* Task Completed Success View on Desktop (Restored light fresh mint background) */
+  .task-completed-success-screen {
+    background-color: #f3faf7 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 36px 20px !important;
+    min-height: 100vh !important;
+    height: 100% !important;
+    width: 100% !important;
+  }
+
+  .task-completed-success-card {
+    max-width: 520px !important;
+    width: 100% !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    margin: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .task-completed-action-btn {
+    max-width: 320px !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+
+  /* Expense Details View on Desktop */
+  .expense-details-inner-wrap {
+    max-width: 760px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    gap: 22px !important;
+  }
+
+  .expense-details-card {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    padding: 24px 28px !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  .expense-proof-large-box {
+    max-width: 500px !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 auto !important;
+    min-height: 200px !important;
+    max-height: 420px !important;
+    background: #07152b !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 18px !important;
+    padding: 10px !important;
+    box-shadow: 0 10px 28px rgba(7, 21, 43, 0.15) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .expense-proof-large-img {
+    max-height: 400px !important;
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    border-radius: 12px !important;
+  }
+
+  .expense-proof-thumbs-row {
+    gap: 14px !important;
+    margin-top: 14px !important;
+    margin-bottom: 14px !important;
+    justify-content: center !important;
+  }
+
+  .expense-details-inner-wrap .btn-primary-login {
+    max-width: 360px !important;
+    margin: 0 auto !important;
+    display: flex !important;
+  }
+
+  /* Employee Report on Desktop */
+  .employee-report-container {
+    width: 100% !important;
+    padding: 0 clamp(28px, 3vw, 64px) !important;
+  }
+}
+
+/* =========================================
+   ULTRA-WIDE (1600px+): Constrain content max-width
+   ========================================= */
+@media (min-width: 1600px) {
+  .dashboard-body {
+    max-width: 1480px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: clamp(40px, 4vw, 80px) !important;
+    padding-right: clamp(40px, 4vw, 80px) !important;
+  }
+
+  .dashboard-top-header,
+  .tasks-top-header,
+  .expenses-top-header,
+  .admin-top-header,
+  .profile-top-header {
+    padding-left: clamp(40px, 4vw, 80px) !important;
+    padding-right: clamp(40px, 4vw, 80px) !important;
+  }
+}

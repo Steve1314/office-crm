@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1082943344002",
+    "project_id": "hr-onboarding-sytem",
+    "storage_bucket": "hr-onboarding-sytem.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082943344002:android:3161f761cf13ed8568939b",
+        "android_client_info": {
+          "package_name": "com.task.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7rhIXJKQH-aeYDuIi_z5aG9zog0uarOw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082943344002:android:666517e8dcb5cc4d68939b",
+        "android_client_info": {
+          "package_name": "com.vchat.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7rhIXJKQH-aeYDuIi_z5aG9zog0uarOw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

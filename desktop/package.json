@@ -1,0 +1,8 @@
+{
+  "name": "office-crm-desktop",
+  "productName": "Office CRM",
+  "version": "1.0.0",
+  "description": "Office CRM Windows Desktop Application",
+  "main": "main.js",
+  "author": "Vahlay Consulting"
+}

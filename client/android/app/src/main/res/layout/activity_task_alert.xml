@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Full-screen task alert layout — shown over the lock screen like a WhatsApp incoming call.
+    Dark navy background matches the CRM brand, white text is readable in all lighting.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/alert_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#07152B"
+    android:gravity="center_horizontal"
+    android:padding="28dp">
+
+    <!-- Top spacer (push content toward center) -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Bell / alert icon ring -->
+    <LinearLayout
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:gravity="center"
+        android:background="@drawable/alert_icon_bg"
+        android:layout_marginBottom="28dp">
+
+        <!-- Unicode bell emoji as text — no image asset needed -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🚨"
+            android:textSize="40sp" />
+    </LinearLayout>
+
+    <!-- "TASK ALERT" label -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TASK ALERT"
+        android:textColor="#5E9BFF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.18"
+        android:layout_marginBottom="10dp" />
+
+    <!-- Task title -->
+    <TextView
+        android:id="@+id/tv_alert_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="New Task Assigned"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Task body / description -->
+    <TextView
+        android:id="@+id/tv_alert_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text=""
+        android:textColor="#AAC4FF"
+        android:textSize="15sp"
+        android:lineSpacingExtra="3dp"
+        android:maxLines="6"
+        android:ellipsize="end"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Divider -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="1dp"
+        android:background="#1E3A6E"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Bottom spacer -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- ── Action buttons ─────────────────────────────────────────────── -->
+
+    <!-- OPEN TASK — primary CTA -->
+    <Button
+        android:id="@+id/btn_alert_open"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Open Task"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:background="@drawable/btn_open_bg"
+        android:layout_marginBottom="12dp" />
+
+    <!-- SNOOZE -->
+    <Button
+        android:id="@+id/btn_alert_snooze"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:text="Snooze 5 min"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:background="@drawable/btn_snooze_bg"
+        android:layout_marginBottom="10dp" />
+
+    <!-- DISMISS -->
+    <Button
+        android:id="@+id/btn_alert_dismiss"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Dismiss"
+        android:textColor="#778CA3"
+        android:textSize="14sp"
+        android:background="@drawable/btn_dismiss_bg"
+        android:layout_marginBottom="4dp" />
+
+</LinearLayout>

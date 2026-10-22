@@ -1,0 +1,12 @@
+{
+  "name": "office-crm",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "client": "npm run dev --prefix client",
+    "client:build": "npm run build --prefix client",
+    "server": "npm run dev --prefix server",
+    "server:start": "npm start --prefix server",
+    "dev": "npm run dev --prefix client"
+  }
+}

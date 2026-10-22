@@ -1,0 +1,10 @@
+{
+  "appId": "com.task.app",
+  "appName": "Office CRM",
+  "webDir": "dist",
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}
