@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build Unsigned iOS IPA
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Checkout repository
@@ -28,6 +28,11 @@ jobs:
       - name: Build Web Application & Sync iOS
         working-directory: ./client
         run: npm run build:ios
+
+      - name: Verify Xcode & Swift Environment
+        run: |
+          xcodebuild -version
+          swift -version
 
       - name: Build Xcode Project
         working-directory: ./client/ios/App
