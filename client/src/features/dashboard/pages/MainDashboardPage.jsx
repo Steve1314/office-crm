@@ -14,13 +14,14 @@ import ExpenseDetailsScreen from '../../expenses/components/ExpenseDetailsScreen
 import ProfilePage from '../../profile/components/ProfilePage';
 import IssueMoneyScreen from '../../admin/components/IssueMoneyScreen';
 import EmployeeReportScreen from '../../admin/components/EmployeeReportScreen';
+import SnoozeTaskModal from '../../tasks/components/SnoozeTaskModal';
 import BottomNav from '../../../components/layout/BottomNav';
 import DesktopSidebar from '../../../components/layout/DesktopSidebar';
 import notificationService from '../../../services/notificationService';
 import apiService from '../../../services/api';
 import useSwipeBack from '../../../hooks/useSwipeBack';
 import { createPortal } from 'react-dom';
-import { BellRing, CheckCircle2, ChevronLeft, Receipt, Wallet } from 'lucide-react';
+import { BellRing, CheckCircle2, ChevronLeft, Receipt, Wallet, BellOff } from 'lucide-react';
 
 export default function MainDashboardPage({ 
   user = { name: 'Admin', role: 'Admin' }, 
@@ -39,6 +40,7 @@ export default function MainDashboardPage({
   const [selectedEmployeeForReport, setSelectedEmployeeForReport] = useState(null);
   const [activeTaskAlert, setActiveTaskAlert] = useState(null);
   const [taskAlertActionError, setTaskAlertActionError] = useState('');
+  const [snoozeModalConfig, setSnoozeModalConfig] = useState({ isOpen: false, taskId: null, title: '' });
 
   // Smooth Tab Switch with Skeleton Loading
   const handleTabChange = useCallback((tab) => {
@@ -241,11 +243,21 @@ export default function MainDashboardPage({
     }
   }, [activeAlertTask, activeTaskAlert, isUrgentTaskAlert]);
 
-  const snoozeAlertTask = async () => {
+  const snoozeAlertTask = () => {
     if (!activeTaskAlert?.taskId) return;
     setTaskAlertActionError('');
+    setSnoozeModalConfig({
+      isOpen: true,
+      taskId: activeTaskAlert.taskId,
+      title: activeAlertTask?.title || activeTaskAlert.title || 'Task Reminder'
+    });
+  };
+
+  const handleConfirmAlertSnooze = async (options) => {
+    if (!snoozeModalConfig.taskId) return;
     try {
-      await handleSnoozeTask(activeTaskAlert.taskId);
+      await handleSnoozeTask(snoozeModalConfig.taskId, options);
+      setSnoozeModalConfig({ isOpen: false, taskId: null, title: '' });
       dismissTaskAlert();
     } catch (error) {
       setTaskAlertActionError(error.message || 'Could not snooze this task.');
@@ -560,12 +572,29 @@ export default function MainDashboardPage({
     }
   };
 
-  const handleSnoozeTask = async (taskId) => {
-    const response = await apiService.snoozeTask(taskId);
+  const handleSnoozeTask = async (taskId, options = {}) => {
+    const response = await apiService.snoozeTask(taskId, options);
     if (!response?.success) {
       throw new Error(response?.message || 'Could not snooze task.');
     }
     await loadRealData();
+    return response;
+  };
+
+  const handleUpdateTaskStartDate = async (taskId, startDate) => {
+    const response = await apiService.updateTaskStartDate(taskId, startDate);
+    if (!response?.success) {
+      throw new Error(response?.message || 'Could not update task start date.');
+    }
+    await loadRealData();
+    if (activeTaskForCompletion && (activeTaskForCompletion.id === taskId || activeTaskForCompletion._id === taskId)) {
+      setActiveTaskForCompletion(prev => ({
+        ...prev,
+        ...(response.task || {}),
+        startDate
+      }));
+    }
+    return response;
   };
 
   const handleSendTaskAlert = async (taskId) => apiService.sendTaskAlert(taskId);
@@ -589,11 +618,12 @@ export default function MainDashboardPage({
     });
   };
 
-  const snoozeTaskFromDetails = async (taskId) => {
-    await handleSnoozeTask(taskId);
+  const snoozeTaskFromDetails = async (taskId, options = {}) => {
+    const res = await handleSnoozeTask(taskId, options);
     notificationService.stopAlarm();
     await notificationService.clearTaskNotification(taskId);
     setActiveTaskForCompletion(null);
+    return res;
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -727,6 +757,7 @@ export default function MainDashboardPage({
             }}
             onConfirmComplete={handleConfirmTaskCompletion}
             onSnoozeTask={snoozeTaskFromDetails}
+            onUpdateTaskStartDate={handleUpdateTaskStartDate}
             onDeleteTask={(taskId) => {
               handleDeleteTask(taskId);
               setActiveTaskForCompletion(null);
@@ -850,6 +881,7 @@ export default function MainDashboardPage({
                 onBackToHome={() => handleTabChange('home')}
                 onOpenCreateTask={() => setIsCreatingTask(true)}
                 onSnoozeTask={handleSnoozeTask}
+                onUpdateTaskStartDate={handleUpdateTaskStartDate}
                 onSendTaskAlert={handleSendTaskAlert}
                 onDeleteTask={handleDeleteTask}
                 onSelectTask={(task) => {
@@ -986,11 +1018,12 @@ export default function MainDashboardPage({
               {isUrgentTaskAlert && (
                 <button
                   type="button"
-                  className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200"
                   onClick={snoozeAlertTask}
                   disabled={!activeTaskAlert.taskId}
                 >
-                  Snooze (5 min)
+                  <BellOff size={14} className="text-amber-600" />
+                  Snooze...
                 </button>
               )}
               {isUrgentTaskAlert && activeTaskAlert.taskId && (
@@ -1016,6 +1049,14 @@ export default function MainDashboardPage({
         </div>,
         document.body
       )}
+
+      {/* Snooze Options Modal */}
+      <SnoozeTaskModal
+        isOpen={snoozeModalConfig.isOpen}
+        taskTitle={snoozeModalConfig.title}
+        onClose={() => setSnoozeModalConfig({ isOpen: false, taskId: null, title: '' })}
+        onConfirmSnooze={handleConfirmAlertSnooze}
+      />
     </div>
   );
 }

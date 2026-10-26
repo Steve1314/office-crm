@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ChevronDown, Check, Paperclip, FileText, X, Eye, FileUp, Download } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Check, Paperclip, FileText, X, Eye, FileUp, Download, Calendar, Clock } from 'lucide-react';
 import { downloadFile } from '../../../components/common/ImageLightboxModal';
 import { compressImageFile } from '../../../utils/imageCompressor';
 import { backIconButton, screenBody, screenFrame, screenHeader, screenHeaderGroup, screenTitle } from '../../../utils/tailwindClasses';
@@ -30,6 +30,16 @@ export default function CreateTaskScreen({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('High');
+  const [scheduleType, setScheduleType] = useState('immediate');
+  const [scheduledDateTime, setScheduledDateTime] = useState('');
+
+  const getDefaultScheduledTime = () => {
+    const d = new Date(Date.now() + 60 * 60 * 1000);
+    d.setMinutes(0, 0, 0);
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+    return localISOTime;
+  };
   
   // Attachments State (Images & PDFs)
   const [attachments, setAttachments] = useState([]);
@@ -103,12 +113,16 @@ export default function CreateTaskScreen({
     e.preventDefault();
     if (!title.trim()) return;
 
+    const finalStartDate = scheduleType === 'scheduled' && scheduledDateTime
+      ? new Date(scheduledDateTime).toISOString()
+      : null;
+
     const newTask = {
       id: Date.now().toString(),
       title: title.trim(),
       description: description.trim() || 'No description provided.',
       priority: priority,
-      dateTime: 'Today • Just now',
+      startDate: finalStartDate,
       assignedTo: selectedAssignee.name,
       assignedToName: selectedAssignee.name,
       assignedToId: selectedAssignee.id || selectedAssignee._id || null,
@@ -337,6 +351,71 @@ export default function CreateTaskScreen({
                 {t('High')}
               </button>
             </div>
+          </div>
+
+          {/* Start Date & Time (When Task Starts) */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                <Calendar size={16} className="text-blue-600" />
+                {t('When will this task start?')}
+              </label>
+              <span className="text-[11px] font-medium text-slate-500">
+                {scheduleType === 'immediate' ? t('Starts immediately') : t('Scheduled for later')}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                className={`min-h-11 rounded-xl border px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+                  scheduleType === 'immediate'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-600/20'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+                onClick={() => setScheduleType('immediate')}
+              >
+                <Clock size={15} />
+                {t('Start Immediately')}
+              </button>
+              <button
+                type="button"
+                className={`min-h-11 rounded-xl border px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+                  scheduleType === 'scheduled'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-600/20'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+                onClick={() => {
+                  setScheduleType('scheduled');
+                  if (!scheduledDateTime) {
+                    setScheduledDateTime(getDefaultScheduledTime());
+                  }
+                }}
+              >
+                <Calendar size={15} />
+                {t('Schedule for Later')}
+              </button>
+            </div>
+
+            {scheduleType === 'scheduled' && (
+              <div className="mt-1 rounded-xl border border-blue-100 bg-blue-50/50 p-3 flex flex-col gap-2">
+                <label className="text-xs font-semibold text-slate-700">
+                  {t('Select task start date & time:')}
+                </label>
+                <input
+                  type="datetime-local"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-medium text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none"
+                  value={scheduledDateTime}
+                  onChange={(e) => setScheduledDateTime(e.target.value)}
+                  min={new Date().toISOString().slice(0, 16)}
+                  required={scheduleType === 'scheduled'}
+                />
+                <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                  <span>ℹ️</span>
+                  {t('Reminders & loud alerts will wait until this scheduled start time.')}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Create Task Button */}

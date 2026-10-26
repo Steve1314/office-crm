@@ -35,8 +35,10 @@ const sendDueReminders = async () => {
     for (const task of pendingTasks) {
       const currentTask = await Task.findOne({ _id: task._id, completed: false });
       if (!currentTask || (currentTask.snoozedUntil && currentTask.snoozedUntil > now)) continue;
+      // Do not remind if scheduled start date is in the future
+      if (currentTask.startDate && new Date(currentTask.startDate) > now) continue;
 
-      const reminderBase = currentTask.lastReminderAt || currentTask.createdAt;
+      const reminderBase = currentTask.lastReminderAt || currentTask.startDate || currentTask.createdAt;
       if (!reminderBase || now.getTime() - new Date(reminderBase).getTime() < REMINDER_INTERVAL_MS) continue;
 
       const assignee = await resolveTaskAssignee(currentTask);

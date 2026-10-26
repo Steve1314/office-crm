@@ -12,12 +12,16 @@ import {
   Clock, 
   User,
   Trash2,
+  Calendar,
+  BellOff
 } from 'lucide-react';
 import ImageLightboxModal, { downloadFile } from '../../../components/common/ImageLightboxModal';
 import { compressImageFile } from '../../../utils/imageCompressor';
 import { getTaskAssignerName } from '../utils/taskDisplay';
 import { backIconButton, screenBody, screenFrame, screenHeader, screenHeaderGroup, screenTitle } from '../../../utils/tailwindClasses';
 import { useLanguage } from '../../../contexts/useLanguage';
+import SnoozeTaskModal from './SnoozeTaskModal';
+import ChangeStartDateModal from './ChangeStartDateModal';
 
 export default function CompleteTaskScreen({ 
   task = {
@@ -33,11 +37,15 @@ export default function CompleteTaskScreen({
   onBack, 
   onConfirmComplete,
   onSnoozeTask,
+  onUpdateTaskStartDate,
   onDeleteTask
 }) {
   const { t } = useLanguage();
   const [completionNotes, setCompletionNotes] = useState('');
   const [activePreviewAttachment, setActivePreviewAttachment] = useState(null);
+  const [isSnoozeModalOpen, setIsSnoozeModalOpen] = useState(false);
+  const [isChangeStartDateModalOpen, setIsChangeStartDateModalOpen] = useState(false);
+  const [isUpdatingStartDate, setIsUpdatingStartDate] = useState(false);
   const [lightboxState, setLightboxState] = useState({
     isOpen: false,
     images: [],
@@ -123,16 +131,31 @@ export default function CompleteTaskScreen({
     }
   };
 
-  const handleSnooze = async () => {
+  const handleSnooze = () => {
+    setIsSnoozeModalOpen(true);
+  };
+
+  const handleConfirmSnooze = async (options) => {
     if (!onSnoozeTask) return;
     setIsSnoozing(true);
     setSubmitError('');
     try {
-      await onSnoozeTask(task.id || task._id);
+      await onSnoozeTask(task.id || task._id, options);
+      setIsSnoozeModalOpen(false);
     } catch (error) {
       setSubmitError(error.message || 'Could not snooze this task.');
     } finally {
       setIsSnoozing(false);
+    }
+  };
+
+  const handleSaveStartDate = async (newStartDate) => {
+    if (!onUpdateTaskStartDate) return;
+    setIsUpdatingStartDate(true);
+    try {
+      await onUpdateTaskStartDate(task.id || task._id, newStartDate);
+    } finally {
+      setIsUpdatingStartDate(false);
     }
   };
 
@@ -221,6 +244,32 @@ export default function CompleteTaskScreen({
                 <span className="text-xs font-semibold text-slate-500">{t('Assigned by')}</span>
                 <span className="break-words text-sm font-medium text-slate-800">{getTaskAssignerName(task, users)}</span>
               </div>
+            )}
+          </div>
+
+          {/* Start Time Row - accessible to both assignee and assigner */}
+          <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200/80 p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                <Calendar size={16} />
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {t('Task Start Time')}
+                </span>
+                <span className="text-xs font-bold text-slate-800">
+                  {task.dateTime || 'Today • Just now'}
+                </span>
+              </div>
+            </div>
+            {!task.completed && onUpdateTaskStartDate && (
+              <button
+                type="button"
+                onClick={() => setIsChangeStartDateModalOpen(true)}
+                className="rounded-lg border border-blue-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition shadow-sm"
+              >
+                {t('Change')}
+              </button>
             )}
           </div>
 
@@ -417,9 +466,10 @@ export default function CompleteTaskScreen({
                   type="button"
                   onClick={handleSnooze}
                   disabled={isSubmitting || isSnoozing}
-                  className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  {isSnoozing ? t('Snoozing...') : t('Snooze for 5 minutes')}
+                  <BellOff size={16} className="text-amber-600" />
+                  <span>{isSnoozing ? t('Snoozing...') : t('Snooze Task...')}</span>
                 </button>
               )}
             </div>
@@ -551,6 +601,24 @@ export default function CompleteTaskScreen({
         initialIndex={lightboxState.index}
         title={lightboxState.title}
         onClose={() => setLightboxState({ ...lightboxState, isOpen: false })}
+      />
+
+      {/* Snooze Options Modal */}
+      <SnoozeTaskModal
+        isOpen={isSnoozeModalOpen}
+        taskTitle={task.title}
+        isLoading={isSnoozing}
+        onClose={() => setIsSnoozeModalOpen(false)}
+        onConfirmSnooze={handleConfirmSnooze}
+      />
+
+      {/* Change Start Date Modal */}
+      <ChangeStartDateModal
+        isOpen={isChangeStartDateModalOpen}
+        task={task}
+        isLoading={isUpdatingStartDate}
+        onClose={() => setIsChangeStartDateModalOpen(false)}
+        onSaveStartDate={handleSaveStartDate}
       />
 
     </div>

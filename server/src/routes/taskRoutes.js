@@ -7,6 +7,7 @@ router.get('/', verifyToken, taskController.getTasks);
 router.post('/', verifyToken, requireAdmin, taskController.createTask);
 router.put('/:taskId/complete', verifyToken, taskController.completeTask);
 router.put('/:taskId/snooze', verifyToken, taskController.snoozeTask);
+router.put('/:taskId/start-date', verifyToken, taskController.updateTaskStartDate);
 
 // Quick notification action routes (no auth required for instant notification clicks)
 router.post('/:taskId/quick-snooze', taskController.quickSnoozeTask);

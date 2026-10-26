@@ -35,6 +35,10 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: 'Today'
   },
+  startDate: {
+    type: Date,
+    default: null
+  },
   completed: {
     type: Boolean,
     default: false

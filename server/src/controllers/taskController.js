@@ -36,6 +36,53 @@ exports.getTasks = async (req, res) => {
   }
 };
 
+const formatTaskDateTime = (date) => {
+  if (!date) return 'Today • Just now';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return 'Today • Just now';
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const timeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+  if (isToday) {
+    return `Today at ${timeStr}`;
+  }
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (d.toDateString() === tomorrow.toDateString()) {
+    return `Tomorrow at ${timeStr}`;
+  }
+  const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return `${dateStr} at ${timeStr}`;
+};
+
+const calculateSnoozeTarget = (req) => {
+  let minutes = 10;
+  if (req.body?.durationMinutes || req.query?.durationMinutes) {
+    minutes = Number(req.body?.durationMinutes || req.query?.durationMinutes);
+  } else if (req.body?.minutes || req.query?.minutes) {
+    minutes = Number(req.body?.minutes || req.query?.minutes);
+  }
+  
+  if (req.body?.snoozedUntil) {
+    const customTime = new Date(req.body.snoozedUntil);
+    if (!isNaN(customTime.getTime()) && customTime.getTime() > Date.now()) {
+      return customTime;
+    }
+  }
+
+  const validMinutes = Math.max(1, isNaN(minutes) ? 10 : minutes);
+  return new Date(Date.now() + validMinutes * 60 * 1000);
+};
+
+const formatSnoozeDuration = (snoozeTime) => {
+  const diffMinutes = Math.max(1, Math.round((snoozeTime.getTime() - Date.now()) / (60 * 1000)));
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'}`;
+  }
+  const hours = diffMinutes / 60;
+  return `${hours.toFixed(diffMinutes % 60 === 0 ? 0 : 1)} hour${hours === 1 ? '' : 's'}`;
+};
+
 // Create Task & Immediately Send High-Priority Killed-App FCM Alert
 exports.createTask = async (req, res) => {
   try {
@@ -49,6 +96,7 @@ exports.createTask = async (req, res) => {
       assignedById,
       assignedByName,
       assignedBy,
+      startDate,
       attachments = []
     } = req.body;
 
@@ -61,6 +109,11 @@ exports.createTask = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Title and Assignee are required' });
     }
 
+    const parsedStartDate = startDate ? new Date(startDate) : null;
+    const isValidStartDate = parsedStartDate && !isNaN(parsedStartDate.getTime());
+    const finalStartDate = isValidStartDate ? parsedStartDate : null;
+    const displayDateTime = finalStartDate ? `Starts: ${formatTaskDateTime(finalStartDate)}` : 'Today • Just now';
+
     const task = await Task.create({
       title,
       description: description || '',
@@ -70,9 +123,12 @@ exports.createTask = async (req, res) => {
       assignedBy: finalAssignerId,
       assignedByName: finalAssignerName,
       attachments,
-      dateTime: 'Today • Just now'
+      startDate: finalStartDate,
+      dateTime: displayDateTime
     });
     publishLiveUpdate('tasks');
+
+    const isFutureTask = finalStartDate && finalStartDate.getTime() > Date.now();
 
     // Send the first alert to the assignee's registered device.
     try {
@@ -82,8 +138,10 @@ exports.createTask = async (req, res) => {
         (!finalAssignerId && assignee.name?.trim().toLowerCase() === finalAssignerName.trim().toLowerCase())
       );
       if (assignedToCreator) {
-        task.lastReminderAt = new Date();
-        await task.save();
+        if (!isFutureTask) {
+          task.lastReminderAt = new Date();
+          await task.save();
+        }
       } else {
         let notificationSent = false;
         if (assignee?.fcmToken) {
@@ -96,17 +154,20 @@ exports.createTask = async (req, res) => {
           notificationSent = Boolean(response);
         }
         if (assignee?._id) {
+          const bodyText = isFutureTask
+            ? `${task.assignedByName} scheduled a task for ${formatTaskDateTime(finalStartDate)}: "${task.title}"`
+            : `${task.assignedByName} assigned you: "${task.title}"`;
           notificationSent = publishUserNotification(assignee._id, {
-            title: 'Task Assigned',
-            body: `${task.assignedByName} assigned you: "${task.title}"`,
+            title: isFutureTask ? 'Upcoming Task Assigned' : 'Task Assigned',
+            body: bodyText,
             taskId: String(task._id),
             type: 'TASK_ASSIGNED'
           }) || notificationSent;
         }
-        if (notificationSent) {
+        if (notificationSent && !isFutureTask) {
           task.lastReminderAt = new Date();
           await task.save();
-        } else {
+        } else if (!notificationSent) {
           console.warn(`Task assignment alert could not be delivered: no registered push token or live session for "${task.assignedToName}"`);
         }
       }
@@ -175,7 +236,7 @@ exports.completeTask = async (req, res) => {
 exports.quickSnoozeTask = async (req, res) => {
   try {
     const { taskId } = req.params;
-    const snoozeTime = new Date(Date.now() + 5 * 60 * 1000);
+    const snoozeTime = calculateSnoozeTarget(req);
 
     const task = await Task.findOneAndUpdate(
       { _id: taskId, completed: false },
@@ -191,9 +252,11 @@ exports.quickSnoozeTask = async (req, res) => {
     }
     publishLiveUpdate('tasks');
 
+    const durationText = formatSnoozeDuration(snoozeTime);
+
     res.json({
       success: true,
-      message: 'Task alert snoozed for 5 minutes',
+      message: `Task alert snoozed for ${durationText}`,
       snoozedUntil: snoozeTime,
       snoozeCount: task.snoozeCount,
       task
@@ -247,11 +310,11 @@ exports.quickCompleteTask = async (req, res) => {
   }
 };
 
-// Snooze Task for 5 Minutes
+// Snooze Task with Custom Duration
 exports.snoozeTask = async (req, res) => {
   try {
     const { taskId } = req.params;
-    const snoozeTime = new Date(Date.now() + 5 * 60 * 1000);
+    const snoozeTime = calculateSnoozeTarget(req);
 
     const task = await Task.findOneAndUpdate(
       { _id: taskId, completed: false },
@@ -267,11 +330,67 @@ exports.snoozeTask = async (req, res) => {
     }
     publishLiveUpdate('tasks');
 
+    const durationText = formatSnoozeDuration(snoozeTime);
+
     res.json({
       success: true,
-      message: 'Task alert snoozed for 5 minutes',
+      message: `Task alert snoozed for ${durationText}`,
       snoozedUntil: snoozeTime,
       snoozeCount: task.snoozeCount,
+      task
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Update Task Start Date (both assignee & assigner & admin have permission)
+exports.updateTaskStartDate = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { startDate } = req.body;
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+    if (task.completed) {
+      return res.status(409).json({ success: false, message: 'Completed tasks cannot be updated' });
+    }
+
+    const userId = req.user ? String(req.user.id || req.user._id || '') : '';
+    const userName = req.user ? String(req.user.name || '').trim().toLowerCase() : '';
+    const userRole = req.user ? String(req.user.role || '').toLowerCase() : '';
+
+    const isAdmin = userRole === 'admin';
+    const isAssignee = (userId && String(task.assignedTo) === userId) ||
+      (userName && String(task.assignedToName).trim().toLowerCase() === userName);
+    const isAssigner = (userId && String(task.assignedBy) === userId) ||
+      (userName && String(task.assignedByName).trim().toLowerCase() === userName);
+
+    if (!isAdmin && !isAssignee && !isAssigner) {
+      return res.status(403).json({ success: false, message: 'You do not have permission to update this task' });
+    }
+
+    const parsedStartDate = startDate ? new Date(startDate) : null;
+    const isValidStartDate = parsedStartDate && !isNaN(parsedStartDate.getTime());
+    task.startDate = isValidStartDate ? parsedStartDate : null;
+
+    if (task.startDate) {
+      task.dateTime = `Starts: ${formatTaskDateTime(task.startDate)}`;
+      if (task.startDate.getTime() > Date.now()) {
+        task.lastReminderAt = null;
+      }
+    } else {
+      task.dateTime = 'Today • Just now';
+    }
+
+    await task.save();
+    publishLiveUpdate('tasks');
+
+    res.json({
+      success: true,
+      message: 'Task start date updated successfully',
       task
     });
   } catch (error) {

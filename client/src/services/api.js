@@ -117,11 +117,15 @@ class ApiService {
     }
   }
 
-  async snoozeTask(taskId) {
+  async snoozeTask(taskId, options = {}) {
     try {
+      const payload = typeof options === 'number'
+        ? { durationMinutes: options }
+        : (options && typeof options === 'object' ? options : {});
       const response = await fetch(`${this.baseUrl}/tasks/${taskId}/quick-snooze`, {
         method: 'POST',
-        headers: this.getHeaders()
+        headers: this.getHeaders(),
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
@@ -130,6 +134,24 @@ class ApiService {
       return data;
     } catch (error) {
       console.error('Task snooze failed:', error.message);
+      throw error;
+    }
+  }
+
+  async updateTaskStartDate(taskId, startDate) {
+    try {
+      const response = await fetch(`${this.baseUrl}/tasks/${taskId}/start-date`, {
+        method: 'PUT',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ startDate })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Unable to update task start date.');
+      }
+      return data;
+    } catch (error) {
+      console.error('Update task start date failed:', error.message);
       throw error;
     }
   }

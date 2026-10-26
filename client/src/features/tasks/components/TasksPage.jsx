@@ -10,11 +10,15 @@ import {
   Paperclip, 
   X,
   Clock,
-  BellRing
+  BellRing,
+  Calendar,
+  BellOff
 } from 'lucide-react';
 import { TaskItemsSkeleton } from '../../../components/common/Skeleton';
 import { getTaskAssignerName } from '../utils/taskDisplay';
 import { useLanguage } from '../../../contexts/useLanguage';
+import SnoozeTaskModal from './SnoozeTaskModal';
+import ChangeStartDateModal from './ChangeStartDateModal';
 
 export default function TasksPage({
   tasks = [],
@@ -24,6 +28,7 @@ export default function TasksPage({
   onBackToHome,
   onOpenCreateTask,
   onSnoozeTask,
+  onUpdateTaskStartDate,
   onSendTaskAlert,
   onSelectTask
 }) {
@@ -35,6 +40,9 @@ export default function TasksPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [snoozingTaskId, setSnoozingTaskId] = useState(null);
+  const [selectedTaskForSnooze, setSelectedTaskForSnooze] = useState(null);
+  const [selectedTaskForStartDate, setSelectedTaskForStartDate] = useState(null);
+  const [isUpdatingStartDate, setIsUpdatingStartDate] = useState(false);
   const [alertingTaskId, setAlertingTaskId] = useState(null);
   const [actionError, setActionError] = useState('');
   const [actionMessage, setActionMessage] = useState('');
@@ -121,17 +129,43 @@ export default function TasksPage({
   const activePendingCount = currentScopeTasks.filter(t => !t.completed).length;
   const activeCompletedCount = currentScopeTasks.filter(t => t.completed).length;
 
-  const handleSnooze = async (taskId) => {
-    if (!onSnoozeTask) return;
+  const handleOpenSnoozeModal = (e, task) => {
+    e.stopPropagation();
+    setSelectedTaskForSnooze(task);
+  };
+
+  const handleConfirmSnooze = async (options) => {
+    if (!selectedTaskForSnooze || !onSnoozeTask) return;
+    const taskId = selectedTaskForSnooze.id || selectedTaskForSnooze._id;
     setSnoozingTaskId(taskId);
     setActionError('');
     setActionMessage('');
     try {
-      await onSnoozeTask(taskId);
+      const res = await onSnoozeTask(taskId, options);
+      setActionMessage(res?.message || t('Task alert snoozed.'));
+      setSelectedTaskForSnooze(null);
     } catch (error) {
-      setActionError(error.message || 'Could not snooze this task.');
+      setActionError(error.message || t('Could not snooze this task.'));
     } finally {
       setSnoozingTaskId(null);
+    }
+  };
+
+  const handleSaveStartDate = async (newStartDate) => {
+    if (!selectedTaskForStartDate || !onUpdateTaskStartDate) return;
+    const taskId = selectedTaskForStartDate.id || selectedTaskForStartDate._id;
+    setIsUpdatingStartDate(true);
+    setActionError('');
+    setActionMessage('');
+    try {
+      const res = await onUpdateTaskStartDate(taskId, newStartDate);
+      setActionMessage(res?.message || t('Task start date updated.'));
+      setSelectedTaskForStartDate(null);
+    } catch (error) {
+      setActionError(error.message || t('Could not update start date.'));
+      throw error;
+    } finally {
+      setIsUpdatingStartDate(false);
     }
   };
 
@@ -392,21 +426,38 @@ export default function TasksPage({
                       )}
                     </div>
 
-                    <div className="mt-1 text-[11px] font-medium text-slate-400">{task.dateTime}</div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] font-medium text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={12} className="text-blue-500" />
+                        {task.dateTime}
+                      </span>
+                      {!task.completed && onUpdateTaskStartDate && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTaskForStartDate(task);
+                          }}
+                          className="font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          {t('Change')}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
                     {!task.completed && scopeFilter === 'my_tasks' && (
                       <button
                         type="button"
-                        onClick={() => handleSnooze(task.id)}
-                        disabled={snoozingTaskId === task.id}
-                        title={t('Snooze reminders for 5 minutes')}
-                        aria-label={t('Snooze reminders for 5 minutes')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#64748b', background: 'transparent', border: 0, padding: '4px', fontSize: '10px', cursor: 'pointer', opacity: snoozingTaskId === task.id ? 0.5 : 1 }}
+                        onClick={(e) => handleOpenSnoozeModal(e, task)}
+                        disabled={snoozingTaskId === (task.id || task._id)}
+                        title={t('Snooze reminders')}
+                        aria-label={t('Snooze reminders')}
+                        className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-semibold text-slate-500 hover:bg-slate-100 hover:text-amber-700 transition"
                       >
-                        <Clock size={14} />
-                        5m
+                        <BellOff size={13} className="text-amber-600" />
+                        <span>{t('Snooze')}</span>
                       </button>
                     )}
                     {!task.completed && scopeFilter === 'assigned_by_me' && (
@@ -439,6 +490,24 @@ export default function TasksPage({
         )}
 
       </div>
+
+      {/* Snooze Modal */}
+      <SnoozeTaskModal
+        isOpen={Boolean(selectedTaskForSnooze)}
+        taskTitle={selectedTaskForSnooze?.title}
+        isLoading={Boolean(snoozingTaskId)}
+        onClose={() => setSelectedTaskForSnooze(null)}
+        onConfirmSnooze={handleConfirmSnooze}
+      />
+
+      {/* Change Start Date Modal */}
+      <ChangeStartDateModal
+        isOpen={Boolean(selectedTaskForStartDate)}
+        task={selectedTaskForStartDate}
+        isLoading={isUpdatingStartDate}
+        onClose={() => setSelectedTaskForStartDate(null)}
+        onSaveStartDate={handleSaveStartDate}
+      />
     </div>
   );
 }
