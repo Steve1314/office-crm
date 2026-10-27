@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Clock, X, BellOff, Calendar, Check, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../../contexts/useLanguage';
 
@@ -16,7 +17,8 @@ export default function SnoozeTaskModal({
   taskTitle = '',
   onClose,
   onConfirmSnooze,
-  isLoading = false
+  isLoading = false,
+  error = ''
 }) {
   const { t } = useLanguage();
   const [selectedDuration, setSelectedDuration] = useState(15); // default 15 mins
@@ -56,9 +58,9 @@ export default function SnoozeTaskModal({
     }
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-all"
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-all"
       onClick={onClose}
     >
       <div 
@@ -86,6 +88,13 @@ export default function SnoozeTaskModal({
             <X size={18} />
           </button>
         </div>
+
+        {error && (
+          <div className="mx-5 mt-4 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600 border border-red-100">
+            <AlertCircle size={16} className="shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-5 flex flex-col gap-4 overflow-y-auto">
@@ -195,6 +204,7 @@ export default function SnoozeTaskModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

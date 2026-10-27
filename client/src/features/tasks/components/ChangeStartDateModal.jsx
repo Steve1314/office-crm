@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, Clock, X, Check, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../../contexts/useLanguage';
 
@@ -57,9 +58,9 @@ export default function ChangeStartDateModal({
     }
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-all"
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-all"
       onClick={onClose}
     >
       <div 
@@ -226,6 +227,7 @@ export default function ChangeStartDateModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

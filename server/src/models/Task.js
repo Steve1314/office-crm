@@ -79,7 +79,11 @@ const taskSchema = new mongoose.Schema({
     url: String,
     isImage: Boolean,
     isPdf: Boolean
-  }]
+  }],
+  assignmentBatchId: {
+    type: String,
+    default: null
+  }
 }, {
   timestamps: true
 });

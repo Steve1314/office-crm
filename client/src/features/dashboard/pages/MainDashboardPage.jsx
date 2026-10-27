@@ -41,6 +41,8 @@ export default function MainDashboardPage({
   const [activeTaskAlert, setActiveTaskAlert] = useState(null);
   const [taskAlertActionError, setTaskAlertActionError] = useState('');
   const [snoozeModalConfig, setSnoozeModalConfig] = useState({ isOpen: false, taskId: null, title: '' });
+  const [isAlertSnoozing, setIsAlertSnoozing] = useState(false);
+  const [alertSnoozeError, setAlertSnoozeError] = useState('');
 
   // Smooth Tab Switch with Skeleton Loading
   const handleTabChange = useCallback((tab) => {
@@ -246,6 +248,7 @@ export default function MainDashboardPage({
   const snoozeAlertTask = () => {
     if (!activeTaskAlert?.taskId) return;
     setTaskAlertActionError('');
+    setAlertSnoozeError('');
     setSnoozeModalConfig({
       isOpen: true,
       taskId: activeTaskAlert.taskId,
@@ -256,11 +259,15 @@ export default function MainDashboardPage({
   const handleConfirmAlertSnooze = async (options) => {
     if (!snoozeModalConfig.taskId) return;
     try {
+      setIsAlertSnoozing(true);
+      setAlertSnoozeError('');
       await handleSnoozeTask(snoozeModalConfig.taskId, options);
       setSnoozeModalConfig({ isOpen: false, taskId: null, title: '' });
       dismissTaskAlert();
     } catch (error) {
-      setTaskAlertActionError(error.message || 'Could not snooze this task.');
+      setAlertSnoozeError(error.message || 'Could not snooze this task.');
+    } finally {
+      setIsAlertSnoozing(false);
     }
   };
 
@@ -942,7 +949,7 @@ export default function MainDashboardPage({
       )}
 
       </div>
-      {activeTaskAlert && createPortal(
+      {activeTaskAlert && !snoozeModalConfig.isOpen && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
           role="alertdialog"
@@ -1054,7 +1061,12 @@ export default function MainDashboardPage({
       <SnoozeTaskModal
         isOpen={snoozeModalConfig.isOpen}
         taskTitle={snoozeModalConfig.title}
-        onClose={() => setSnoozeModalConfig({ isOpen: false, taskId: null, title: '' })}
+        isLoading={isAlertSnoozing}
+        error={alertSnoozeError}
+        onClose={() => {
+          setAlertSnoozeError('');
+          setSnoozeModalConfig({ isOpen: false, taskId: null, title: '' });
+        }}
         onConfirmSnooze={handleConfirmAlertSnooze}
       />
     </div>

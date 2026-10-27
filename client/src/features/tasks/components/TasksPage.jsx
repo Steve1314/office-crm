@@ -118,7 +118,7 @@ export default function TasksPage({
       const q = searchQuery.toLowerCase();
       const matchTitle = (t.title || '').toLowerCase().includes(q);
       const matchDesc = (t.description || '').toLowerCase().includes(q);
-      const matchAssignee = (t.assignedTo || '').toLowerCase().includes(q);
+      const matchAssignee = (t.assignedToName || t.assignedTo || '').toLowerCase().includes(q);
       const matchAssigner = getTaskAssignerName(t, users).toLowerCase().includes(q);
       if (!matchTitle && !matchDesc && !matchAssignee && !matchAssigner) return false;
     }

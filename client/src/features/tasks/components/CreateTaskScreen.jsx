@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ChevronDown, Check, Paperclip, FileText, X, Eye, FileUp, Download, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Check, Paperclip, FileText, X, Eye, FileUp, Download, Calendar, Clock, User, Users, CheckSquare, Square, Search } from 'lucide-react';
 import { downloadFile } from '../../../components/common/ImageLightboxModal';
 import { compressImageFile } from '../../../utils/imageCompressor';
 import { backIconButton, screenBody, screenFrame, screenHeader, screenHeaderGroup, screenTitle } from '../../../utils/tailwindClasses';
@@ -24,14 +24,66 @@ export default function CreateTaskScreen({
     if (currentUserIds.size || currentUserEmail) return !sharesId && !sharesEmail;
     return String(member.name || '').trim().toLowerCase() !== String(currentUser?.name || '').trim().toLowerCase();
   });
+  const availableMembers = teamMembers.length > 0 ? teamMembers : employees;
 
-  const [selectedAssignee, setSelectedAssignee] = useState(() => teamMembers[0] || null);
+  const [assignmentMode, setAssignmentMode] = useState('single'); // 'single' | 'multiple'
+  const [selectedAssignees, setSelectedAssignees] = useState(() => (availableMembers[0] ? [availableMembers[0]] : []));
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [assigneeError, setAssigneeError] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('High');
   const [scheduleType, setScheduleType] = useState('immediate');
   const [scheduledDateTime, setScheduledDateTime] = useState('');
+
+  const isSelected = (member) => {
+    const mId = String(member.id || member._id || '').toLowerCase();
+    const mName = String(member.name || '').trim().toLowerCase();
+    return selectedAssignees.some((item) => {
+      const itemId = String(item.id || item._id || '').toLowerCase();
+      const itemName = String(item.name || '').trim().toLowerCase();
+      return (mId && itemId && mId === itemId) || (mName && itemName && mName === itemName);
+    });
+  };
+
+  const handleToggleMember = (member) => {
+    setAssigneeError('');
+    if (assignmentMode === 'single') {
+      setSelectedAssignees([member]);
+      setIsDropdownOpen(false);
+      return;
+    }
+
+    if (isSelected(member)) {
+      setSelectedAssignees((prev) => prev.filter((m) => {
+        const mId = String(member.id || member._id || '').toLowerCase();
+        const mName = String(member.name || '').trim().toLowerCase();
+        const itemId = String(m.id || m._id || '').toLowerCase();
+        const itemName = String(m.name || '').trim().toLowerCase();
+        return !((mId && itemId && mId === itemId) || (mName && itemName && mName === itemName));
+      }));
+    } else {
+      setSelectedAssignees((prev) => [...prev, member]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    setAssigneeError('');
+    setSelectedAssignees([...availableMembers]);
+  };
+
+  const handleClearAll = () => {
+    setSelectedAssignees([]);
+  };
+
+  const filteredMembers = availableMembers.filter((member) => {
+    if (!memberSearchQuery.trim()) return true;
+    const q = memberSearchQuery.toLowerCase();
+    const nameMatch = (member.name || '').toLowerCase().includes(q);
+    const roleMatch = (member.role || '').toLowerCase().includes(q);
+    return nameMatch || roleMatch;
+  });
 
   const getDefaultScheduledTime = () => {
     const d = new Date(Date.now() + 60 * 60 * 1000);
@@ -113,9 +165,18 @@ export default function CreateTaskScreen({
     e.preventDefault();
     if (!title.trim()) return;
 
+    if (selectedAssignees.length === 0) {
+      setAssigneeError(t('Please select at least one person to assign this task.'));
+      return;
+    }
+    setAssigneeError('');
+
     const finalStartDate = scheduleType === 'scheduled' && scheduledDateTime
       ? new Date(scheduledDateTime).toISOString()
       : null;
+
+    const isSingle = selectedAssignees.length === 1;
+    const primary = selectedAssignees[0];
 
     const newTask = {
       id: Date.now().toString(),
@@ -123,9 +184,13 @@ export default function CreateTaskScreen({
       description: description.trim() || 'No description provided.',
       priority: priority,
       startDate: finalStartDate,
-      assignedTo: selectedAssignee.name,
-      assignedToName: selectedAssignee.name,
-      assignedToId: selectedAssignee.id || selectedAssignee._id || null,
+      assignedTo: isSingle ? primary.name : selectedAssignees.map((m) => m.name).join(', '),
+      assignedToName: isSingle ? primary.name : selectedAssignees.map((m) => m.name).join(', '),
+      assignedToId: isSingle ? (primary.id || primary._id || null) : null,
+      assignees: selectedAssignees.map((m) => ({
+        id: m.id || m._id || null,
+        name: m.name
+      })),
       assignedBy: currentUser?.name || 'Admin',
       assignedByName: currentUser?.name || 'Admin',
       assignedById: currentUser?.id || currentUser?._id || null,
@@ -157,51 +222,246 @@ export default function CreateTaskScreen({
       <div className={screenBody} style={{ paddingBottom: '220px' }}>
         <form className="flex w-full flex-col gap-5" onSubmit={handleSubmit}>
           
-          {/* Assign To */}
+          {/* Assign To Section (Single Person & Multiple People) */}
           <div ref={dropdownRef} className="relative flex min-w-0 flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700">{t('Assign To')}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-slate-700">{t('Assign To')}</label>
+              
+              {/* Segmented Mode Selector: Single vs Multiple */}
+              <div className="flex items-center rounded-lg bg-slate-100 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAssignmentMode('single');
+                    if (selectedAssignees.length > 1) {
+                      setSelectedAssignees([selectedAssignees[0]]);
+                    }
+                  }}
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                    assignmentMode === 'single'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <User size={13} />
+                  <span>{t('Single')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAssignmentMode('multiple')}
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                    assignmentMode === 'multiple'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Users size={13} />
+                  <span>{t('Multiple')}</span>
+                  {selectedAssignees.length > 1 && (
+                    <span className="rounded-full bg-blue-100 px-1.5 py-0.2 text-[10px] font-bold text-blue-700">
+                      {selectedAssignees.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Main Dropdown Button */}
             <div 
-              className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 transition hover:border-blue-300"
+              className={`flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-900 transition hover:border-blue-300 ${
+                assigneeError ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+              }`}
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
               <div className="flex min-w-0 items-center gap-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-                  {selectedAssignee?.name ? selectedAssignee.name[0] : 'U'}
-                </div>
-                <span className="truncate font-medium">
-                  {selectedAssignee ? selectedAssignee.name : t('Select Team Member...')}
-                </span>
+                {assignmentMode === 'single' ? (
+                  <>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-sm">
+                      {selectedAssignees[0]?.name ? selectedAssignees[0].name[0] : 'U'}
+                    </div>
+                    <span className="truncate font-medium">
+                      {selectedAssignees[0] ? selectedAssignees[0].name : t('Select Team Member...')}
+                    </span>
+                    {selectedAssignees[0]?.role && (
+                      <span className="hidden sm:inline-block rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                        {selectedAssignees[0].role}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-sm">
+                      <Users size={15} />
+                    </div>
+                    <span className="truncate font-medium">
+                      {selectedAssignees.length === 0
+                        ? t('Select Team Members...')
+                        : selectedAssignees.length === 1
+                        ? `${selectedAssignees[0].name} (1 selected)`
+                        : `${selectedAssignees.length} ${t('Team Members Selected')}`}
+                    </span>
+                  </>
+                )}
               </div>
-              <ChevronDown size={18} style={{ color: '#64748b' }} />
+              <ChevronDown size={18} className={`text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </div>
 
-            {/* Dropdown Options */}
+            {/* Error Message */}
+            {assigneeError && (
+              <p className="text-xs font-medium text-rose-600">{assigneeError}</p>
+            )}
+
+            {/* Chips of Selected Members (Multiple Mode) */}
+            {assignmentMode === 'multiple' && selectedAssignees.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {selectedAssignees.map((member) => (
+                  <span
+                    key={member.id || member._id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 py-1 pl-1.5 pr-2 text-xs font-medium text-blue-900 transition hover:bg-blue-100"
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                      {member.name ? member.name[0] : 'U'}
+                    </span>
+                    <span className="truncate max-w-[120px]">{member.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleMember(member);
+                      }}
+                      className="ml-0.5 rounded-full p-0.5 text-blue-600 hover:bg-blue-200 hover:text-rose-600"
+                      title={t('Remove')}
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Multiple Mode Multi-Assignment Info Banner */}
+            {assignmentMode === 'multiple' && selectedAssignees.length > 1 && (
+              <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50/50 p-2.5 text-xs text-blue-800">
+                <Users size={16} className="shrink-0 text-blue-600" />
+                <span>
+                  {t('Assigning to')} <strong>{selectedAssignees.length} {t('people')}</strong>: {t('An individual task copy will be sent to each person.')}
+                </span>
+              </div>
+            )}
+
+            {/* Dropdown Options Popup */}
             {isDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
-                {teamMembers.length === 0 ? (
-                  <div style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
-                    {t('No other employees are available for task assignment.')}
+              <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-2xl">
+                {/* Search & Actions Bar inside Dropdown */}
+                <div className="mb-2 flex flex-col gap-2">
+                  <div className="relative flex items-center">
+                    <Search size={14} className="absolute left-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none"
+                      placeholder={t('Search team members...')}
+                      value={memberSearchQuery}
+                      onChange={(e) => setMemberSearchQuery(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {memberSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMemberSearchQuery('');
+                        }}
+                        className="absolute right-2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Action Buttons for Multi-select */}
+                  {assignmentMode === 'multiple' && (
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 pt-0.5 text-xs">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectAll();
+                          }}
+                          className="font-semibold text-blue-600 hover:text-blue-700"
+                        >
+                          {t('Select All')} ({availableMembers.length})
+                        </button>
+                        <span className="text-slate-300">•</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClearAll();
+                          }}
+                          className="font-medium text-slate-500 hover:text-slate-700"
+                        >
+                          {t('Clear')}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDropdownOpen(false);
+                        }}
+                        className="rounded-md bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-100"
+                      >
+                        {t('Done')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {filteredMembers.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-400">
+                    {t('No matching team members found.')}
                   </div>
                 ) : (
-                  teamMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-blue-50"
-                      onClick={() => {
-                        setSelectedAssignee(member);
-                        setIsDropdownOpen(false);
-                      }}
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-                        {member.name ? member.name[0] : 'U'}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        <span className="truncate text-sm font-medium text-slate-800">{member.name}</span>
-                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>{member.role || 'Member'}</span>
-                      </div>
-                      {selectedAssignee?.id === member.id && <Check size={16} color="#1e69ff" />}
-                    </div>
-                  ))
+                  <div className="flex flex-col gap-0.5">
+                    {filteredMembers.map((member) => {
+                      const checked = isSelected(member);
+                      return (
+                        <div
+                          key={member.id || member._id}
+                          className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-2 transition ${
+                            checked ? 'bg-blue-50/70 font-semibold text-blue-900' : 'hover:bg-slate-50 text-slate-800'
+                          }`}
+                          onClick={() => handleToggleMember(member)}
+                        >
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            {assignmentMode === 'multiple' && (
+                              <div className="shrink-0 text-blue-600">
+                                {checked ? (
+                                  <CheckSquare size={17} className="text-blue-600" />
+                                ) : (
+                                  <Square size={17} className="text-slate-300" />
+                                )}
+                              </div>
+                            )}
+
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-sm">
+                              {member.name ? member.name[0] : 'U'}
+                            </div>
+
+                            <div className="flex min-w-0 flex-col">
+                              <span className="truncate text-xs font-medium text-slate-800">{member.name}</span>
+                              <span className="text-[10px] text-slate-400">{member.role || 'Member'}</span>
+                            </div>
+                          </div>
+
+                          {assignmentMode === 'single' && checked && (
+                            <Check size={16} className="shrink-0 text-blue-600" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
@@ -421,7 +681,9 @@ export default function CreateTaskScreen({
           {/* Create Task Button */}
           <div className="mb-8 mt-1">
             <button type="submit" className="min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-              {t('Create Task')}
+              {assignmentMode === 'multiple' && selectedAssignees.length > 1
+                ? `${t('Assign Task to')} ${selectedAssignees.length} ${t('People')}`
+                : t('Create & Assign Task')}
             </button>
           </div>
 

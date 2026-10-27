@@ -84,6 +84,7 @@ const formatSnoozeDuration = (snoozeTime) => {
 };
 
 // Create Task & Immediately Send High-Priority Killed-App FCM Alert
+// Supports assigning to a single person or multiple people simultaneously
 exports.createTask = async (req, res) => {
   try {
     const {
@@ -97,85 +98,136 @@ exports.createTask = async (req, res) => {
       assignedByName,
       assignedBy,
       startDate,
-      attachments = []
+      attachments = [],
+      assignees
     } = req.body;
 
-    const finalAssigneeName = assignedToName || assignedTo || 'Team Member';
-    const finalAssigneeId = assignedToId || (req.user ? req.user.id : null) || assignedTo;
-    const finalAssignerName = assignedByName || assignedBy || (req.user ? req.user.name : 'Admin');
-    const finalAssignerId = assignedById || (req.user ? req.user.id : null);
-
-    if (!title || (!assignedTo && !assignedToName && !assignedToId)) {
+    if (!title || (!assignedTo && !assignedToName && !assignedToId && (!Array.isArray(assignees) || assignees.length === 0))) {
       return res.status(400).json({ success: false, message: 'Title and Assignee are required' });
     }
+
+    // Normalize assignees list (supports array of objects {id, name}, array of strings/IDs, or single fields)
+    let assigneesList = [];
+    if (Array.isArray(assignees) && assignees.length > 0) {
+      assigneesList = assignees.map((a) => {
+        if (typeof a === 'string') return { id: a, name: a };
+        return {
+          id: a?.id || a?._id || a?.assignedToId || a?.assignedTo || null,
+          name: a?.name || a?.assignedToName || a?.assignedTo || 'Team Member'
+        };
+      });
+    } else if (Array.isArray(assignedTo) && assignedTo.length > 0) {
+      assigneesList = assignedTo.map((a, idx) => {
+        if (typeof a === 'string') {
+          const matchingId = Array.isArray(assignedToId) ? assignedToId[idx] : null;
+          return { id: matchingId || a, name: a };
+        }
+        return {
+          id: a?.id || a?._id || a?.assignedToId || a?.assignedTo || null,
+          name: a?.name || a?.assignedToName || 'Team Member'
+        };
+      });
+    } else {
+      const singleName = assignedToName || assignedTo || 'Team Member';
+      const singleId = assignedToId || (req.user ? req.user.id : null) || assignedTo;
+      assigneesList = [{ id: singleId, name: singleName }];
+    }
+
+    // Filter out empty assignees
+    assigneesList = assigneesList.filter((a) => a && (a.id || a.name));
+    if (assigneesList.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one valid assignee is required' });
+    }
+
+    const finalAssignerName = assignedByName || assignedBy || (req.user ? req.user.name : 'Admin');
+    const finalAssignerId = assignedById || (req.user ? req.user.id : null);
 
     const parsedStartDate = startDate ? new Date(startDate) : null;
     const isValidStartDate = parsedStartDate && !isNaN(parsedStartDate.getTime());
     const finalStartDate = isValidStartDate ? parsedStartDate : null;
     const displayDateTime = finalStartDate ? `Starts: ${formatTaskDateTime(finalStartDate)}` : 'Today • Just now';
-
-    const task = await Task.create({
-      title,
-      description: description || '',
-      priority,
-      assignedTo: finalAssigneeId,
-      assignedToName: finalAssigneeName,
-      assignedBy: finalAssignerId,
-      assignedByName: finalAssignerName,
-      attachments,
-      startDate: finalStartDate,
-      dateTime: displayDateTime
-    });
-    publishLiveUpdate('tasks');
-
     const isFutureTask = finalStartDate && finalStartDate.getTime() > Date.now();
 
-    // Send the first alert to the assignee's registered device.
-    try {
-      const assignee = await resolveTaskAssignee(task);
-      const assignedToCreator = assignee && (
-        (finalAssignerId && String(assignee._id) === String(finalAssignerId)) ||
-        (!finalAssignerId && assignee.name?.trim().toLowerCase() === finalAssignerName.trim().toLowerCase())
-      );
-      if (assignedToCreator) {
-        if (!isFutureTask) {
-          task.lastReminderAt = new Date();
-          await task.save();
+    const batchId = assigneesList.length > 1
+      ? `batch_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+      : null;
+
+    const createdTasks = [];
+
+    for (const assigneeItem of assigneesList) {
+      const finalAssigneeId = assigneeItem.id || assigneeItem.name;
+      const finalAssigneeName = assigneeItem.name || 'Team Member';
+
+      const task = await Task.create({
+        title: title.trim(),
+        description: description || '',
+        priority,
+        assignedTo: finalAssigneeId,
+        assignedToName: finalAssigneeName,
+        assignedBy: finalAssignerId,
+        assignedByName: finalAssignerName,
+        attachments,
+        startDate: finalStartDate,
+        dateTime: displayDateTime,
+        assignmentBatchId: batchId
+      });
+
+      // Send the alert to each assignee's registered device.
+      try {
+        const assignee = await resolveTaskAssignee(task);
+        const assignedToCreator = assignee && (
+          (finalAssignerId && String(assignee._id) === String(finalAssignerId)) ||
+          (!finalAssignerId && assignee.name?.trim().toLowerCase() === finalAssignerName.trim().toLowerCase())
+        );
+        if (assignedToCreator) {
+          if (!isFutureTask) {
+            task.lastReminderAt = new Date();
+            await task.save();
+          }
+        } else {
+          let notificationSent = false;
+          if (assignee?.fcmToken) {
+            const response = await fcmService.sendTaskAssignedAlert(assignee.fcmToken, {
+              taskTitle: task.title,
+              assignedByName: task.assignedByName,
+              taskId: task._id,
+              priority: task.priority
+            });
+            notificationSent = Boolean(response);
+          }
+          if (assignee?._id) {
+            const bodyText = isFutureTask
+              ? `${task.assignedByName} scheduled a task for ${formatTaskDateTime(finalStartDate)}: "${task.title}"`
+              : `${task.assignedByName} assigned you: "${task.title}"`;
+            notificationSent = publishUserNotification(assignee._id, {
+              title: isFutureTask ? 'Upcoming Task Assigned' : 'Task Assigned',
+              body: bodyText,
+              taskId: String(task._id),
+              type: 'TASK_ASSIGNED'
+            }) || notificationSent;
+          }
+          if (notificationSent && !isFutureTask) {
+            task.lastReminderAt = new Date();
+            await task.save();
+          } else if (!notificationSent) {
+            console.warn(`Task assignment alert could not be delivered: no registered push token or live session for "${task.assignedToName}"`);
+          }
         }
-      } else {
-        let notificationSent = false;
-        if (assignee?.fcmToken) {
-          const response = await fcmService.sendTaskAssignedAlert(assignee.fcmToken, {
-            taskTitle: task.title,
-            assignedByName: task.assignedByName,
-            taskId: task._id,
-            priority: task.priority
-          });
-          notificationSent = Boolean(response);
-        }
-        if (assignee?._id) {
-          const bodyText = isFutureTask
-            ? `${task.assignedByName} scheduled a task for ${formatTaskDateTime(finalStartDate)}: "${task.title}"`
-            : `${task.assignedByName} assigned you: "${task.title}"`;
-          notificationSent = publishUserNotification(assignee._id, {
-            title: isFutureTask ? 'Upcoming Task Assigned' : 'Task Assigned',
-            body: bodyText,
-            taskId: String(task._id),
-            type: 'TASK_ASSIGNED'
-          }) || notificationSent;
-        }
-        if (notificationSent && !isFutureTask) {
-          task.lastReminderAt = new Date();
-          await task.save();
-        } else if (!notificationSent) {
-          console.warn(`Task assignment alert could not be delivered: no registered push token or live session for "${task.assignedToName}"`);
-        }
+      } catch (fcmErr) {
+        console.warn('FCM alert skipped for assignee:', finalAssigneeName, fcmErr.message);
       }
-    } catch (fcmErr) {
-      console.warn('FCM alert skipped:', fcmErr.message);
+
+      createdTasks.push(task);
     }
 
-    res.status(201).json({ success: true, task });
+    publishLiveUpdate('tasks');
+
+    res.status(201).json({
+      success: true,
+      task: createdTasks[0],
+      tasks: createdTasks,
+      count: createdTasks.length
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
