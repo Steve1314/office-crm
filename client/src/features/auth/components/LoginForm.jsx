@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Download } from 'lucide-react';
 import logoImg from '../../../assets/images/logo.png';
 import { useLanguage } from '../../../contexts/useLanguage';
 import apiService from '../../../services/api';
@@ -184,6 +184,21 @@ export default function LoginForm({ onLoginSuccess }) {
             </div>
           )}
         </form>
+
+        {/* Download App Option */}
+        <div className="mt-5 flex flex-col items-center gap-2 border-t border-slate-100 pt-4 text-center">
+          <a
+            href="/OfficeCRM.apk"
+            download="OfficeCRM.apk"
+            className="flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+          >
+            <Download size={14} className="text-emerald-600" />
+            <span>{t('Download Android App (.apk)')}</span>
+          </a>
+          <p className="text-[11px] text-slate-400">
+            {t('iPhone users: Tap Share in Safari → "Add to Home Screen"')}
+          </p>
+        </div>
       </div>
     </div>
   );

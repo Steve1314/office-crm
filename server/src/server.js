@@ -36,6 +36,15 @@ app.use('/api/expenses', require('./routes/expenseRoutes'));
 const path = require('path');
 const fs = require('fs');
 
+// Direct APK Download Endpoint
+app.get(['/download/apk', '/api/download/apk'], (req, res) => {
+  const apkPath = path.resolve(__dirname, '../public/OfficeCRM.apk');
+  if (fs.existsSync(apkPath)) {
+    return res.download(apkPath, 'OfficeCRM.apk');
+  }
+  res.status(404).json({ success: false, message: 'APK not found on server' });
+});
+
 // Static client build serving (production SPA fallback)
 const clientDistPath = path.resolve(__dirname, '../public');
 if (fs.existsSync(clientDistPath)) {

@@ -9,7 +9,10 @@ import {
   ChevronRight,
   X,
   Smartphone,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  ExternalLink,
+  Share2
 } from 'lucide-react';
 import { useLanguage } from '../../../contexts/useLanguage';
 
@@ -130,7 +133,26 @@ export default function ProfilePage({
             </div>
           </div>
 
-          {/* 5. About */}
+          {/* 5. Download Mobile App */}
+          <div 
+            className="flex w-full cursor-pointer items-center justify-between border-b border-slate-100 px-4 py-4 text-left transition hover:bg-slate-50"
+            onClick={() => setActiveModal('download')}
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <Download size={20} strokeWidth={1.8} />
+              </div>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-sm font-semibold text-slate-800">{t('Download Mobile App')}</span>
+                <span className="text-[11px] text-slate-400">Android APK & iOS Install</span>
+              </div>
+            </div>
+            <div className="text-slate-400">
+              <ChevronRight size={18} />
+            </div>
+          </div>
+
+          {/* 6. About */}
           <div 
             className="flex w-full cursor-pointer items-center justify-between px-4 py-4 text-left transition hover:bg-slate-50"
             onClick={() => setActiveModal('about')}
@@ -426,6 +448,88 @@ export default function ProfilePage({
               }}
             >
               {t('Update Password')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Download Mobile App Modal */}
+      {activeModal === 'download' && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setActiveModal(null)}
+        >
+          <div 
+            className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <Smartphone size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">{t('Install Office CRM')}</h3>
+                  <p className="text-[11px] text-slate-500">Android APK & iOS App</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setActiveModal(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Android Section */}
+            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">Android</span>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">~9.5 MB</span>
+              </div>
+              <p className="text-xs text-slate-600 mb-3">
+                Download the official Android APK directly. Works on all Android phones.
+              </p>
+              <a
+                href="/OfficeCRM.apk"
+                download="OfficeCRM.apk"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-md shadow-emerald-600/25 transition hover:bg-emerald-700"
+              >
+                <Download size={16} />
+                <span>Download Android APK</span>
+              </a>
+            </div>
+
+            {/* iOS Section */}
+            <div className="mt-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Apple iPhone (iOS)</span>
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">Instant</span>
+              </div>
+              <p className="text-xs text-slate-600 mb-2">
+                Install directly on your iPhone without App Store or cables:
+              </p>
+              <ol className="list-decimal list-inside space-y-1 text-xs text-slate-700 mb-3">
+                <li>Open this site in <strong className="text-slate-900">Safari</strong>.</li>
+                <li>Tap the <strong className="text-slate-900">Share button</strong> (⬆ at bottom).</li>
+                <li>Tap <strong className="text-slate-900">"Add to Home Screen"</strong> & tap <strong>Add</strong>.</li>
+              </ol>
+              <div className="rounded-xl border border-slate-200 bg-white p-2.5 text-center">
+                <p className="text-[11px] text-slate-500">
+                  Runs fullscreen with notifications, exactly like a native App Store app.
+                </p>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setActiveModal(null)}
+              className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
+            >
+              Close
             </button>
           </div>
         </div>
